@@ -1,21 +1,28 @@
 ##AoC_2016_11.py
+import itertools
 def main():
     data = []
-    floors = [['HM', 'LM'], ['HG'], ['LG'], []]
-    ##floors = [['GST', 'MST', 'GPL', 'MPL'], ['GTH','GRU','MRU','GCU','MCU'],['MTH'],[]]
+    floors = [[1,2,3,4,5], ['x','y','z','a']]
+    #Example case
+    #floors = [['HM', 'LM'], ['HG'], ['LG'], []]
+    #My data
+    #floors = [['GST', 'MST', 'GPL', 'MPL'], ['GTH','GRU','MRU','GCU','MCU'],['MTH'],[]]
     elevator = 0
-    # for line in open('/Users/jonathanshales/Documents/Programming/Advent/Day_11/input_test.txt', 'r'):
-    #     data = line.split(' a ')
-    #     floors.append(data)
-    # print floors
-    for n in floors:
+    decide_movers(floors, 0)
+    
 
 def decide_movers(setup, elevator_pos):
     possible_movers = []
-    for n in range(len(setup[elevator_pos])):
-        possible_movers.append(setup[elevator_pos[n]])
+    possible_movers = list(itertools.combinations(setup[elevator_pos], 2)) + setup[elevator_pos]
+    return possible_movers
 
+def attempt_move(setup, moving_pieces, elevator_start, elevator_new):
+    proposed_floor = setup + moving_pieces
+    if validate_move(setup+moving_pieces, elevator_new) == True:
 
+def log_move(move_tracker, floor_config):
+    move_tracker.append(floor_config.sort())
+    return move_tracker
 
 def validate_solutions(setup):
     if len(setup[0]) + len(setup[1]) + len(setup[2]) == 0:

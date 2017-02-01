@@ -5,11 +5,13 @@ def main():
     floors = [[1,2,3,4,5], ['x','y','z','a']]
     move_tracker = {}
     #Example case
+    #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
     floors = [['HM', 'LM'], ['HG'], ['LG'], []]
     elevator = 0
     ini_state = Game_State(floors, elevator, 0)
     moves = decide_movers(floors, 0)
-    print attempt_move(floors, moves[0],0,1,move_tracker)
+    for n in range(len(moves)):
+        print attempt_move(floors, moves[n],0,1,move_tracker)
     #My data
     #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
     
@@ -34,11 +36,10 @@ def attempt_move(setup, moving_pieces, elevator_start, elevator_new, move_tracke
         setup_new[elevator_start] = [x for x in setup[elevator_start] if x not in moving_pieces]
         setup_new[elevator_start].sort()
         #setup_new[elevator_new].append(elevator_new)
-        print setup_new
         if hash(frozenset(setup_new[0] + setup_new[1] + setup_new[2] + setup_new[3] + [elevator_new])) in move_tracker:
             return False
         else: 
-            move_tracker.append(hash(frozenset(setup_new[0] + setup_new[1] + setup_new[2] + setup_new[3] + [elevator_new])))
+            move_tracker[(hash(frozenset(setup_new[0] + setup_new[1] + setup_new[2] + setup_new[3] + [elevator_new])))] = 1
             return setup_new, move_tracker
     else: return False, move_tracker
 
@@ -51,7 +52,6 @@ def make_moves(game_state, move_tracker):
             new_move = attempt_move(game_state.current_setup, n, game_state.elevator_pos, game_state.elevator_pos + p, move_track)
             move_track = new_move[1]
         if new_move[0] != False:
-            print new_move[0]
             game_state.add_move(Game_State(new_move[0],elevator_pos+p, game_state.moves_made + 1))
     return game_state, move_track
 
@@ -92,22 +92,6 @@ def decide_movers(setup, elevator_pos):
     possible_movers = list(itertools.combinations(setup[elevator_pos], 2)) + setup[elevator_pos]
     return possible_movers
 
-def attempt_move(setup, moving_pieces, elevator_start, elevator_new, move_tracker):
-    setup_new = setup[:]
-    if validate_move(setup_new[elevator_new], moving_pieces, elevator_new) == True:
-        #move_tracker.append(hash(frozenset())
-        setup_new[elevator_new].append(moving_pieces)
-        setup_new[elevator_new].sort()
-        setup_new[elevator_start] = [x for x in setup[elevator_start] if x not in moving_pieces]
-        setup_new[elevator_start].sort()
-        #setup_new[elevator_new].append(elevator_new)
-        print setup_new
-        if hash(frozenset(setup_new[0] + setup_new[1] + setup_new[2] + setup_new[3] + [elevator_new])) in move_tracker:
-            return False
-        else: 
-            move_tracker.append(hash(frozenset(setup_new[0] + setup_new[1] + setup_new[2] + setup_new[3] + [elevator_new])))
-            return setup_new, move_tracker
-    else: return False, move_tracker
 
 def log_move(move_tracker, floor_config):
     move_tracker.append(hash(frozenset(floor_config)))

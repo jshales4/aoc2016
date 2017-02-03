@@ -9,7 +9,7 @@ def main():
     floors = [['HM', 'LM'], ['HG'], ['LG'], []]
     elevator = 0
     ini_state = Game_State(floors, elevator, 0)
-    make_moves(ini_state, move_tracker)
+    make_moves(ini_state, move_tracker) 
     
 
     # moves = decide_movers(floors, 0)

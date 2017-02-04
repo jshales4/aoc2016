@@ -1,16 +1,19 @@
 ##AoC_2016_11.py
 import itertools
-import pdb
+import sys
 from copy import deepcopy
 def main():
+    sys.setrecursionlimit(5000)
     move_tracker = {}
     #Example case
     #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
     floors = [['HM', 'LM'], ['HG'], ['LG'], []]
+    #floors = [['HM'], ['HG'], [], []]
     elevator = 0
     ini_state = Game_State(floors, elevator, 0)
+    move_tracker[hash(''.join(ini_state.current_setup[0])+ '_' + ''.join(ini_state.current_setup[1]) + '_' +''.join(ini_state.current_setup[2])+ '_' +''.join(ini_state.current_setup[3]) + ''.join(str(elevator)))] = 1
     make_moves(ini_state, move_tracker) 
-    
+    print_levels(ini_state, 0)
 
     # moves = decide_movers(floors, 0)
     # for n in range(len(moves)):
@@ -33,34 +36,42 @@ class Game_State:
     def add_move (self, new_game_state):
         self.move_options.append(new_game_state)
 
+def print_levels(game_state, levels_traveled):
+    if validate_solutions(game_state.current_setup) == True:
+        print 'Solved', levels_traveled
+    else: 
+        for n in game_state.move_options:
+            print_levels(n, levels_traveled + 1)
+
+
 def make_moves(game_state, move_tracker):
     move_set = decide_movers(game_state.current_setup, game_state.elevator_pos)
     move_track = move_tracker
     for n in range(len(move_set)):
         for p in [-1, 1]:
-            print 'Current Gamestate: ', game_state
+            #print 'Current Gamestate: ', game_state
             new_move = attempt_move(deepcopy(game_state.current_setup), move_set[n], deepcopy(game_state.elevator_pos), int(game_state.elevator_pos) + p, deepcopy(game_state.moves_made), move_tracker)
             move_track = new_move[1]
-        if new_move[0] != False:
-            game_state.add_move(new_move[0])
-            if validate_solutions(new_move[0].current_setup) == True:
-                print new_move[0].moves_made
+            if new_move[0] != False:
+                discovered_move = Game_State(new_move[0].current_setup, new_move[0].elevator_pos, new_move[0].moves_made)
+                print 'Move added to log', discovered_move
+                game_state.add_move(discovered_move)
+                if validate_solutions(new_move[0].current_setup) == True:
+                    print new_move[0].moves_made
     if len(game_state.move_options)>0:
         print 'New Node.'
         for r in range(len(game_state.move_options)):
             print 'Options to move from here are', game_state.move_options
             make_moves(game_state.move_options[r], move_tracker)
     else: print game_state.move_options
+
 def attempt_move(gamestate_setup, moving_pieces, elevator_start, elevator_new, moves_made, move_tracker):
-    print 'Setup before move being attempted:', gamestate_setup
-    print 'Here is what will be moved:', moving_pieces
-    print 'The elevator is on floor ', elevator_start
-    print 'The elevator will be moved to floor ', elevator_new
     if elevator_new > 3 or elevator_new < 0:
-        print 'bad floor'
         return False, move_tracker
     elif validate_move(deepcopy(gamestate_setup[elevator_new]), deepcopy(gamestate_setup[elevator_start]), moving_pieces, elevator_new) == True:
-        print 'good floor'
+        print 'Setup before move being attempted:', gamestate_setup
+        print 'Here is what will be moved:', moving_pieces
+        print 'The elevator will be moved to floor ', elevator_new, 'from floor ', elevator_start
         #move_tracker.append(hash(frozenset())
         new_node = Game_State(gamestate_setup, elevator_new, moves_made + 1)
         if len(''.join(moving_pieces)) > 2:
@@ -70,15 +81,17 @@ def attempt_move(gamestate_setup, moving_pieces, elevator_start, elevator_new, m
         new_node.current_setup[elevator_start] = [x for x in new_node.current_setup[elevator_start] if x not in moving_pieces]
         new_node.current_setup[elevator_start].sort()
         #setup_new[elevator_new].append(elevator_new)
-        if  hash(''.join(new_node.current_setup[0])+ '_' + ''.join(new_node.current_setup[1]) + '_' +''.join(new_node.current_setup[2])+ '_' +''.join(new_node.current_setup[3]) + ''.join(str(elevator_new))) in move_tracker:
+        if validate_solutions(new_node.current_setup) == True:
+            print 'Puzzle Solved! ', new_node.moves_made
+            return new_node, move_tracker
+        elif  hash(''.join(new_node.current_setup[0])+ '_' + ''.join(new_node.current_setup[1]) + '_' +''.join(new_node.current_setup[2])+ '_' +''.join(new_node.current_setup[3]) + ''.join(str(elevator_new))) in move_tracker and move_tracker[hash(''.join(new_node.current_setup[0])+ '_' + ''.join(new_node.current_setup[1]) + '_' +''.join(new_node.current_setup[2])+ '_' +''.join(new_node.current_setup[3]) + ''.join(str(elevator_new)))]<=moves_made+1:
             print "We've already tried this move."
             return False, move_tracker
         else: 
-            move_tracker[hash(''.join(new_node.current_setup[0])+ '_' + ''.join(new_node.current_setup[1]) + '_' +''.join(new_node.current_setup[2])+ '_' +''.join(new_node.current_setup[3]) + ''.join(str(elevator_new)))] = 1
-            print 'Move added to log.', new_node
+            move_tracker[hash(''.join(new_node.current_setup[0])+ '_' + ''.join(new_node.current_setup[1]) + '_' +''.join(new_node.current_setup[2])+ '_' +''.join(new_node.current_setup[3]) + ''.join(str(elevator_new)))] = moves_made + 1
             return new_node, move_tracker
     else:
-        print 'Move Invalid'  
+        #print 'Move Invalid'  
         return False, move_tracker
 
 def valid_floor(proposed_floor):
@@ -127,7 +140,6 @@ def log_move(move_tracker, floor_config):
 
 def validate_solutions(setup):
     if len(setup[0]) + len(setup[1]) + len(setup[2]) == 0:
-        print '######PUZZZZZLE SOLVED#######'
         return True
     else: return False
 

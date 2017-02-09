@@ -3,29 +3,26 @@ import itertools
 import sys
 from copy import deepcopy
 def main():
-    sys.setrecursionlimit(5000)
+    sys.setrecursionlimit(22000)
     move_tracker = {}
+    move_watch = True
     #Example case
     #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
-    floors = [['HM', 'LM'], ['HG'], ['LG'], []]
-    #floors = [['HM'], ['HG'], [], []]
+    floors = [['EG', 'EM', 'DG', 'DM', 'SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
+    #floors = [['HM', 'LM'], ['HG'], ['LG'], []]
+    #floors = [['HM', 'HG'], [], [], []]
     elevator = 0
     ini_state = Game_State(floors, elevator, 0)
     move_tracker[hash(''.join(ini_state.current_setup[0])+ '_' + ''.join(ini_state.current_setup[1]) + '_' +''.join(ini_state.current_setup[2])+ '_' +''.join(ini_state.current_setup[3]) + ''.join(str(elevator)))] = 1
-    make_moves(ini_state, move_tracker) 
-    print_levels(ini_state, 0)
+    while (move_watch ==True):
+        moves1 = len(move_tracker)
+        move_tracker = climb_tree(ini_state, move_tracker)
+        if moves1==len(move_tracker):
+            move_watch = False
 
-    # moves = decide_movers(floors, 0)
-    # for n in range(len(moves)):
-    #     result = attempt_move(deepcopy(ini_state.current_setup), moves[n], ini_state.elevator_pos, 1, ini_state.moves_made, move_tracker)
-    #     if result[0] != False:
-    #         ini_state.add_move(result[0])
-    #         print ini_state.move_options
-    #My data
-    #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
-    
-    #decide_movers(floors, 0)
-    ##print make_moves(ini_state, move_tracker)
+
+    #make_moves(ini_state, move_tracker) 
+    print_levels(ini_state, 0)
 
 class Game_State:
     def __init__(self, current_setup, elevator_pos, moves_made):
@@ -33,8 +30,40 @@ class Game_State:
         self.elevator_pos = elevator_pos
         self.moves_made = moves_made
         self.move_options = []
+        self.moves_remain = True
+        self.solution_flag = False
     def add_move (self, new_game_state):
         self.move_options.append(new_game_state)
+
+def climb_tree(game_state, move_tracker):
+    if game_state.solution_flag == True:
+        return move_tracker
+    elif len(game_state.move_options)>0 and game_state.moves_remain == True:
+        for n in game_state.move_options:
+            move_tracker = climb_tree(n, move_tracker)
+        return move_tracker
+    elif game_state.moves_remain == True:
+        move_tracker = make_moves_eff(game_state, move_tracker)
+        return move_tracker
+    else: 
+        game_state.moves_remain = False
+        return move_tracker
+
+
+def iterate_levels(game_state, move_tracker):
+    results = []
+    no_changes = True
+    if len(game_state.moves_made)>0 and game_state.moves_remain == True:
+        for n in game_state.move_options:
+            results.append(iterate_levels(n, move_tracker)[0])
+    elif game_state.moves_remain == False:
+        return True, move_tracker
+    else: 
+        make_moves_eff(game_state, move_tracker)
+        return False, move_tracker
+
+
+
 
 def print_levels(game_state, levels_traveled):
     if validate_solutions(game_state.current_setup) == True:
@@ -42,8 +71,31 @@ def print_levels(game_state, levels_traveled):
     else: 
         for n in game_state.move_options:
             print_levels(n, levels_traveled + 1)
+# def find_depths(game_state, move_tracker):
+#     if game_state.moves_remain = False:
+#         next
+#     elif 
 
-
+def make_moves_eff(game_state, move_tracker):
+    move_set = decide_movers(game_state.current_setup, game_state.elevator_pos)
+    move_track = move_tracker
+    for n in range(len(move_set)):
+        for p in [-1, 1]:
+            new_move = attempt_move(deepcopy(game_state.current_setup), move_set[n], deepcopy(game_state.elevator_pos), int(game_state.elevator_pos) + p, deepcopy(game_state.moves_made), move_tracker)
+            move_track = new_move[1]
+            if new_move[0] != False:
+                discovered_move = Game_State(new_move[0].current_setup, new_move[0].elevator_pos, new_move[0].moves_made)
+                if validate_solutions(new_move[0].current_setup) == True:
+                    print new_move[0].moves_made, 'HEEERE'
+                    discovered_move.solution_flag=True
+                print 'Move added to log', discovered_move
+                game_state.add_move(discovered_move)
+    if len(game_state.move_options)==0:
+        game_state.moves_remain = False
+        return move_tracker
+    else: 
+        return move_tracker
+        
 def make_moves(game_state, move_tracker):
     move_set = decide_movers(game_state.current_setup, game_state.elevator_pos)
     move_track = move_tracker
@@ -106,8 +158,6 @@ def valid_floor(proposed_floor):
     return True
 
 def validate_move(proposed_floor, old_floor, elevator_passengers, elevator_pos):
-    #if elevator_pos<0 or elevator_pos>3:
-        #return False
     old_floor_moved = [x for x in old_floor if x not in elevator_passengers]
     if len(''.join(elevator_passengers)) > 2:
         if elevator_passengers[0][1] == 'G' and elevator_passengers[1][1] == 'M' and elevator_passengers[0][0] != elevator_passengers[1][0]:
@@ -125,18 +175,8 @@ def validate_move(proposed_floor, old_floor, elevator_passengers, elevator_pos):
 
 def decide_movers(setup, elevator_pos):
     possible_movers = []
-    tupled_setup = []
-    # for n in range(len(setup[elevator_pos])):
-    #     tupled_setup.append(tuple(setup[elevator_pos][n]))
-    # print tupled_setup
     possible_movers = list(itertools.combinations(setup[elevator_pos], 2)) + setup[elevator_pos]
-    # possible_movers = list(itertools.chain.from_iterable(possible_movers))
     return possible_movers
-
-
-def log_move(move_tracker, floor_config):
-    move_tracker.append(hash(frozenset(floor_config)))
-    return move_tracker
 
 def validate_solutions(setup):
     if len(setup[0]) + len(setup[1]) + len(setup[2]) == 0:

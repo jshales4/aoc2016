@@ -9,7 +9,7 @@ def main():
     move_watch = True
     #Example case
     #floors = [['SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
-    floors = [['EG', 'EM', 'DG', 'DM', 'SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]]
+    floors = [['EG', 'EM', 'DG', 'DM', 'SG', 'SM', 'PG', 'PM'], ['TG','RG','RM','CG','CM'],['TM'],[]] #This runs in two hours without tree cleaning
     #floors = [['HM', 'LM'], ['HG'], ['LG'], []]
     #floors = [['HM', 'HG'], [], [], []]
     elevator = 0
@@ -18,7 +18,7 @@ def main():
     while (move_watch ==True):
         moves1 = len(move_tracker)
         move_tracker = climb_tree(ini_state, move_tracker)
-        #clean_tree(ini_state)
+        clean_tree(ini_state)
         if moves1==len(move_tracker):
             move_watch = False
 
